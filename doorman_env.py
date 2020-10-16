@@ -23,6 +23,10 @@ class Doorman:
         self.done = False
         self._place_keys()
         self.key_colors =  ['red', 'green', 'blue', 'yellow', 'brown', 'gray']
+        return self.create_observation()
+
+    def create_observation(self):
+        return np.array(self.agent_pos + tuple([key in self.keys_collected for key in range(self.n_keys)]))
 
     def step(self, action):
 
@@ -47,18 +51,18 @@ class Doorman:
         if self.agent_pos in self.keys_pos:
             if self.keys_pos[self.agent_pos] == self.last_collected + 1:
                 key_num = self.keys_pos[self.agent_pos]
-                self.last_collected_key = key_num
+                self.last_collected = self.last_collected + 1
                 del self.keys_pos[self.agent_pos]
                 del self.keys[key_num]
                 self.keys_collected.append(key_num)
 
         info['keys_collected'] = self.keys_collected
 
-        if self.last_collected_key == self.n_keys - 1:
+        if len(info['keys_collected']) == self.n_keys:
             self.done = True
             reward = 1
 
-        return reward, info, self.done
+        return self.create_observation(), reward, self.done, info
 
     def _random_pos(self):
         return (random.randint(0,self.size), random.randint(0,self.size))
@@ -99,17 +103,3 @@ class Doorman:
         plt.xticks(list(range(self.size+1)))
         plt.scatter(x, y, s=area, c=colors, alpha=1)
         plt.show()
-
-d = Doorman(4,3)
-
-d.reset()
-print(d.agent_pos)
-print(d.keys)
-print(d.keys_pos)
-d.render()
-
-while True:
-    action = input()
-    reward, info = d.step(action)
-    print(f'{d.agent_pos} info = {info} reward = {reward}')
-    d.render()
