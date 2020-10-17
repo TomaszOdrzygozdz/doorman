@@ -5,8 +5,6 @@ from keras.layers import Input, Dense
 from keras.models import Model
 from keras.optimizers import Adam
 
-from semi_goal_learning import SemiGoalLearner
-
 
 class GoalNetwork:
 
@@ -26,30 +24,37 @@ class GoalNetwork:
     def predict_goal(self, obs):
         return self.model.predict([obs])
 
-    def fit_trajectories(self, trajectory: List, epochs):
-        x = np.array(trajectory.copy())[:-1]
-        y = np.array(trajectory.copy())[1:]
-        self.model.fit(np.array(x), np.array(y), epochs=2)
+class GoalNetworkEnsemble:
+
+    def __init__(self, n_keys, hidden_layers, n_networks):
+        self.n_keys = n_keys
+        self.hidden_layers = hidden_layers
+        self.n_networks = n_networks
+        self.ensemble = []
+        for _ in range(self.n_networks):
+            self.ensemble.append(GoalNetwork(self.n_keys, self.hidden_layers))
+
+
+    def fit_trajectories(self, trajectories, epochs, mode='only_success'):
+
+        x = []
+        y = []
+
+        succesfull_trajectories = 0
+        for trajectory in trajectories.values():
+
+            if mode == 'all' or (mode == 'only_success' and trajectory['done'] == True):
+                if mode == 'only_success':
+                    succesfull_trajectories += 1
+                x.extend(list(trajectory['trajectory']).copy()[:-1])
+                y.extend(list(trajectory['trajectory']).copy()[1:])
+
+        print(f'Using {succesfull_trajectories} of {len(trajectories)} trajectories '
+              f'({round(100 * succesfull_trajectories/len(trajectories),2)} %). Training on {len(x)} data points.')
+
+        for network in self.ensemble:
+            network.model.fit(x=x, y=y,epochs=epochs)
 
 
 
-uu = SemiGoalLearner(45,3)
-tt, dd = uu.collect_random_trajectory(50000)
-tt2, dd2 = uu.collect_random_trajectory(40000)
-print(f'dd = {dd}')
-
-d = GoalNetwork(3,[50,50,50])
-e = GoalNetwork(3,[50,50,50])
-
-d.fit_trajectory(tt)
-e.fit_trajectory(tt2)
-
-y1 = d.predict_goal(np.array([[2,2,1,0,0]]))
-print(y1)
-y2 = e.predict_goal(np.array([[2,2,1,0,0]]))
-print(y2)
-print("==")
-y1 = d.predict_goal(np.array([[2,2,1,0,0]]))
-print(y1)
-y2 = e.predict_goal(np.array([[2,2,1,0,0]]))
-print(y2)
+        # self.model.fit(np.array(x), np.array(y), epochs=2)

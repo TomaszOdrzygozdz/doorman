@@ -1,4 +1,5 @@
 import random
+import numpy as np
 
 from doorman_env import Doorman
 
@@ -18,7 +19,7 @@ class SemiGoalLearner:
             obs, rew, done, info = self.env.step(random.randint(0,3))
             trajectory.append(obs)
             step += 1
-        return trajectory, done
+        return tuple(trajectory), done
 
     def collect_random_trajectories(self, n_trajectories, step_limit=200):
         trajectories = {}
@@ -31,10 +32,15 @@ class SemiGoalLearner:
         shortened_trajectories = {}
         for num, trajectory in trajectories.items():
             shortened_trajectories[num] = {
-                'trajectory': self.shorten_trajectory(trajectory, every_k),
+                'trajectory': self.shorten_trajectory(trajectory['trajectory'], every_k),
                 'done': trajectories[num]['done']
             }
         return shortened_trajectories
 
     def shorten_trajectory(self, trajectory, every_k):
-        return trajectory[::every_k]
+        short_trajectory = list(trajectory)[::every_k] + [np.array(list(trajectory)[-1])]
+        return tuple(short_trajectory)
+
+    def collect_random_shortened_trajectories(self, num_shortened_trajectories, step_limit, every_k):
+        full_trajectories = self.collect_random_trajectories(num_shortened_trajectories, step_limit)
+        return self.shorten_trajectories(full_trajectories, every_k)
