@@ -28,6 +28,9 @@ class Doorman:
     def create_observation(self):
         return np.array(self.agent_pos + tuple([key in self.keys_collected for key in range(self.n_keys)]))
 
+    def normalized_position(self):
+        return tuple(np.array(self.agent_pos)/self.size)
+
     def step(self, action):
 
         assert self.done == False, 'Episode ended.'

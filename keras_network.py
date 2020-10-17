@@ -4,6 +4,7 @@ import numpy as np
 from keras.layers import Input, Dense
 from keras.models import Model
 from keras.optimizers import Adam
+from keras.losses import cosine_similarity
 
 
 class GoalNetwork:
@@ -13,13 +14,14 @@ class GoalNetwork:
         input = Input(batch_shape=(None, 2 + n_keys))
         layer = input
 
-        for hidden_size, num in enumerate(hidden_layers):
+        for num, hidden_size in enumerate(hidden_layers):
             layer = Dense(hidden_size, activation='relu')(layer)
 
         output = Dense(2 + n_keys)(layer)
 
         self.model = Model(inputs=input, outputs=output)
-        self.model.compile(optimizer=Adam(), loss='mean_squared_error', metrics=['accuracy', 'mean_squared_error'])
+        self.model.compile(optimizer=Adam(), loss='mse', metrics=['accuracy', 'mean_squared_error'])
+        print(self.model.summary())
 
     def predict_goal(self, obs):
         return self.model.predict([obs])
@@ -45,7 +47,8 @@ class GoalNetworkEnsemble:
 
             if mode == 'all' or (mode == 'only_success' and trajectory['done'] == True):
                 used_trajectories += 1
-                x.extend(list(trajectory['trajectory']).copy()[:-1])
+                # x.extend(list(trajectory['trajectory']).copy()[:-1])
+                x.extend(list(trajectory['trajectory']).copy()[1:])
                 y.extend(list(trajectory['trajectory']).copy()[1:])
         x = np.array(x)
         y = np.array(y)
@@ -59,6 +62,7 @@ class GoalNetworkEnsemble:
 
     def predict_goal(self, obs):
 
+
         predictions = []
         for network in self.ensemble:
             predictions.append(network.predict_goal(obs))
@@ -66,9 +70,8 @@ class GoalNetworkEnsemble:
         predictions = np.array(predictions)
         goal = predictions.mean(axis=0)
         stdev = predictions.std(axis=0)
-        print(predictions)
-        print(f'goal = {goal}')
-
+        print(f'input = {obs}')
+        print(f'        goal = {goal}')
         print(f'stdev (*100) = {100 * stdev}')
 
         # self.model.fit(np.array(x), np.array(y), epochs=2)
