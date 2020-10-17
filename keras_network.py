@@ -40,21 +40,35 @@ class GoalNetworkEnsemble:
         x = []
         y = []
 
-        succesfull_trajectories = 0
+        used_trajectories = 0
         for trajectory in trajectories.values():
 
             if mode == 'all' or (mode == 'only_success' and trajectory['done'] == True):
-                if mode == 'only_success':
-                    succesfull_trajectories += 1
+                used_trajectories += 1
                 x.extend(list(trajectory['trajectory']).copy()[:-1])
                 y.extend(list(trajectory['trajectory']).copy()[1:])
+        x = np.array(x)
+        y = np.array(y)
 
-        print(f'Using {succesfull_trajectories} of {len(trajectories)} trajectories '
-              f'({round(100 * succesfull_trajectories/len(trajectories),2)} %). Training on {len(x)} data points.')
+        print(f'Using {used_trajectories} of {len(trajectories)} trajectories] '
+              f'({round(100 * used_trajectories/len(trajectories),2)} %). Training on {len(x)} data points.')
 
         for network in self.ensemble:
             network.model.fit(x=x, y=y,epochs=epochs)
 
 
+    def predict_goal(self, obs):
+
+        predictions = []
+        for network in self.ensemble:
+            predictions.append(network.predict_goal(obs))
+
+        predictions = np.array(predictions)
+        goal = predictions.mean(axis=0)
+        stdev = predictions.std(axis=0)
+        print(predictions)
+        print(f'goal = {goal}')
+
+        print(f'stdev (*100) = {100 * stdev}')
 
         # self.model.fit(np.array(x), np.array(y), epochs=2)

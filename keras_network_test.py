@@ -3,13 +3,17 @@ import numpy as np
 from keras_network import GoalNetwork, GoalNetworkEnsemble
 from semi_goal_learner import SemiGoalLearner
 
-uu = SemiGoalLearner(5,3)
+uu = SemiGoalLearner(8,3)
 
-st = uu.collect_random_shortened_trajectories(5,500,50)
-d = GoalNetworkEnsemble(3,[10,10],5)
+st = uu.collect_random_shortened_trajectories(10000,500,10)
+d = GoalNetworkEnsemble(3,[250,250],3)
 d.fit_trajectories(st,2)
+d.predict_goal([0,0,0,0,0])
 
 
+
+# from keras_network import GoalNetwork
+#
 # tt, dd = uu.collect_random_trajectory(50000)
 # tt2, dd2 = uu.collect_random_trajectory(40000)
 # print(f'dd = {dd}')

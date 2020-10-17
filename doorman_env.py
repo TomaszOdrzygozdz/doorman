@@ -83,7 +83,6 @@ class Doorman:
         correctly_placed = False
         while not correctly_placed:
             correctly_placed = try_placing()
-            print('try')
 
     def render(self):
 

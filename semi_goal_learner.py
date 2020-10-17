@@ -1,5 +1,6 @@
 import random
 import numpy as np
+from tqdm import tqdm
 
 from doorman_env import Doorman
 
@@ -23,7 +24,7 @@ class SemiGoalLearner:
 
     def collect_random_trajectories(self, n_trajectories, step_limit=200):
         trajectories = {}
-        for num in range(n_trajectories):
+        for num in tqdm(range(n_trajectories)):
             trajectory, done = self.collect_random_trajectory(step_limit)
             trajectories[num] = {'trajectory': trajectory, 'done': done}
         return trajectories
