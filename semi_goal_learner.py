@@ -28,20 +28,3 @@ class SemiGoalLearner:
             trajectory, done = self.collect_random_trajectory(step_limit)
             trajectories[num] = {'trajectory': trajectory, 'done': done}
         return trajectories
-
-    def shorten_trajectories(self, trajectories, every_k):
-        shortened_trajectories = {}
-        for num, trajectory in trajectories.items():
-            shortened_trajectories[num] = {
-                'trajectory': self.shorten_trajectory(trajectory['trajectory'], every_k),
-                'done': trajectories[num]['done']
-            }
-        return shortened_trajectories
-
-    def shorten_trajectory(self, trajectory, every_k):
-        short_trajectory = list(trajectory)[::every_k] + [np.array(list(trajectory)[-1])]
-        return tuple(short_trajectory)
-
-    def collect_random_shortened_trajectories(self, num_shortened_trajectories, step_limit, every_k):
-        full_trajectories = self.collect_random_trajectories(num_shortened_trajectories, step_limit)
-        return self.shorten_trajectories(full_trajectories, every_k)

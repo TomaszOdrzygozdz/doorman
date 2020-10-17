@@ -26,7 +26,7 @@ class Doorman:
         return self.create_observation()
 
     def create_observation(self):
-        return np.array(self.agent_pos + tuple([key in self.keys_collected for key in range(self.n_keys)]))
+        return np.array(self.normalized_position() + tuple([key in self.keys_collected for key in range(self.n_keys)]))
 
     def normalized_position(self):
         return tuple(np.array(self.agent_pos)/self.size)

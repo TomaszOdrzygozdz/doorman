@@ -1,4 +1,6 @@
 from typing import List
+from silence_tensorflow import silence_tensorflow
+silence_tensorflow()
 
 import numpy as np
 from keras.layers import Input, Dense
@@ -36,7 +38,7 @@ class GoalNetworkEnsemble:
             self.ensemble.append(GoalNetwork(self.n_keys, self.hidden_layers))
 
 
-    def fit_trajectories(self, trajectories, epochs, mode='only_success'):
+    def fit_trajectories(self, trajectories, shift, epochs, mode='only_success'):
 
         x = []
         y = []
@@ -46,9 +48,8 @@ class GoalNetworkEnsemble:
 
             if mode == 'all' or (mode == 'only_success' and trajectory['done'] == True):
                 used_trajectories += 1
-                # x.extend(list(trajectory['trajectory']).copy()[:-1])
-                x.extend(list(trajectory['trajectory']).copy()[1:])
-                y.extend(list(trajectory['trajectory']).copy()[1:])
+                x.extend(list(trajectory['trajectory']).copy()[:-shift])
+                y.extend(list(trajectory['trajectory']).copy()[shift:])
         x = np.array(x)
         y = np.array(y)
 
@@ -69,7 +70,7 @@ class GoalNetworkEnsemble:
         predictions = np.array(predictions)
         goal = predictions.mean(axis=0)
         stdev = predictions.std(axis=0)
-        print(f'input = {obs}')
+        print(f'       input = {obs}')
         print(f'        goal = {goal}')
         print(f'stdev (*100) = {100 * stdev}')
 
