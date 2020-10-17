@@ -26,7 +26,20 @@ class Doorman:
         return self.create_observation()
 
     def create_observation(self):
+        return self.create_observation_one_hot()
+
+    def create_observation_xy(self):
         return np.array(self.normalized_position() + tuple([key in self.keys_collected for key in range(self.n_keys)]))
+
+    def create_observation_one_hot(self):
+
+        one_hot_x = [0] * self.size
+        one_hot_x[self.agent_pos[0]] = 1
+        one_hot_y = [0] * self.size
+        one_hot_y[self.agent_pos[1]] = 1
+
+        return np.array(tuple(one_hot_x) + tuple(one_hot_y)
+                        + tuple([key in self.keys_collected for key in range(self.n_keys)]))
 
     def normalized_position(self):
         return tuple(np.array(self.agent_pos)/self.size)
@@ -45,7 +58,7 @@ class Doorman:
         self.moves = {0: (0,1), 1: (0,-1), 2: (-1,0), 3: (1,0)}
 
         new_pos = tuple([self.agent_pos[i] + self.moves[move][i] for i in range(2)])
-        if min(new_pos) >= 0 and max(new_pos) <= self.size:
+        if min(new_pos) >= 0 and max(new_pos) < self.size:
             self.agent_pos = new_pos
             info['wall_hit'].append(False)
         else:
@@ -68,7 +81,7 @@ class Doorman:
         return self.create_observation(), reward, self.done, info
 
     def _random_pos(self):
-        return (random.randint(0,self.size), random.randint(0,self.size))
+        return (random.randint(0,self.size-1), random.randint(0,self.size-1))
 
     def _place_keys(self):
         def try_placing():

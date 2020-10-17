@@ -4,7 +4,6 @@ from tqdm import tqdm
 
 from doorman_env import Doorman
 
-
 class SemiGoalLearner:
     def __init__(self, size, n_keys):
         self.size = size

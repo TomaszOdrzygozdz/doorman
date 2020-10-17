@@ -11,31 +11,36 @@ from keras.losses import cosine_similarity
 
 class GoalNetwork:
 
-    def __init__(self, n_keys, hidden_layers):
+    def __init__(self, size, n_keys, hidden_layers):
 
-        input = Input(batch_shape=(None, 2 + n_keys))
+        input = Input(batch_shape=(None, 2 * size + n_keys))
         layer = input
 
         for num, hidden_size in enumerate(hidden_layers):
             layer = Dense(hidden_size, activation='relu')(layer)
 
-        output = Dense(2 + n_keys)(layer)
+        xy_output = Dense(2)(layer)
+        keys_outputs = []
+        for i in range(n_keys):
+            keys_outputs.append(Dense(1, activation='sigmoid')(layer))
+        output = Dense(2 * size + n_keys, activation='sigmoid')(layer)
 
         self.model = Model(inputs=input, outputs=output)
-        self.model.compile(optimizer=Adam(), loss='mse', metrics=['accuracy', 'mean_squared_error'])
+        self.model.compile(optimizer=Adam(), loss='binary_crossentropy', metrics=['accuracy', 'binary_crossentropy'])
 
     def predict_goal(self, obs):
         return self.model.predict([obs])
 
 class GoalNetworkEnsemble:
 
-    def __init__(self, n_keys, hidden_layers, n_networks):
+    def __init__(self, size, n_keys, hidden_layers, n_networks):
         self.n_keys = n_keys
+        self.size = size
         self.hidden_layers = hidden_layers
         self.n_networks = n_networks
         self.ensemble = []
         for _ in range(self.n_networks):
-            self.ensemble.append(GoalNetwork(self.n_keys, self.hidden_layers))
+            self.ensemble.append(GoalNetwork(self.size, self.n_keys, self.hidden_layers))
 
 
     def fit_trajectories(self, trajectories, shift, epochs, mode='only_success'):
