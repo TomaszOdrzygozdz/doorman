@@ -21,7 +21,6 @@ class GoalNetwork:
 
         self.model = Model(inputs=input, outputs=output)
         self.model.compile(optimizer=Adam(), loss='mse', metrics=['accuracy', 'mean_squared_error'])
-        print(self.model.summary())
 
     def predict_goal(self, obs):
         return self.model.predict([obs])
