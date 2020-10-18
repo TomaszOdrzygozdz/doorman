@@ -49,6 +49,7 @@ class VEModel(keras.Model):
     """
     def __init__(self, latent_dim, hidden_sizes, obs_dim, **kwargs):
         super(VEModel, self).__init__(**kwargs)
+        self.obs_dim = obs_dim
         self.encoder = Encoder(latent_dim, hidden_sizes, obs_dim).model
         self.decoder = Decoder(latent_dim, hidden_sizes, obs_dim).model
 
@@ -56,22 +57,28 @@ class VEModel(keras.Model):
         x, y = data
         with tf.GradientTape() as tape:
             z_mean, z_log_var, z = self.encoder(x)
-            reconstruction, _ = self.decoder(z)
+            reconstruction, confidence = self.decoder(z)
+
+            uniformization_loss = -tf.reduce_mean(tf.math.log(tf.math.scalar_mul(1/self.obs_dim, confidence)))
+
+            reconstruction = tf.math.multiply(reconstruction, confidence)
+            y = tf.math.multiply(y, confidence)
             reconstruction_loss = tf.reduce_mean(
-                keras.losses.binary_crossentropy(y, reconstruction)
+                keras.losses.mean_squared_error(y, reconstruction)
             )
 
             reconstruction_loss *= 100
             kl_loss = 1 + z_log_var - tf.square(z_mean) - tf.exp(z_log_var)
             kl_loss = tf.reduce_mean(kl_loss)
             kl_loss *= -0.5
-            total_loss = reconstruction_loss + kl_loss
+            total_loss = reconstruction_loss + kl_loss + 10*uniformization_loss
         grads = tape.gradient(total_loss, self.trainable_weights)
         self.optimizer.apply_gradients(zip(grads, self.trainable_weights))
         return {
             "loss": total_loss,
             "reconstruction_loss": reconstruction_loss,
             "kl_loss": kl_loss,
+            "uniformization_loss" : uniformization_loss
         }
 
 
