@@ -93,7 +93,6 @@ class GoalNetworkEnsemble:
 
     def predict_goal(self, obs):
 
-
         predictions = []
         for network in self.ensemble:
             predictions.append(network.predict_goal(obs))
