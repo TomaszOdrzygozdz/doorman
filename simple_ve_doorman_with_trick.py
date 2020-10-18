@@ -1,3 +1,5 @@
+import sys
+
 import numpy as np
 import tensorflow as tf
 import keras
@@ -43,6 +45,10 @@ class Decoder:
 
         self.model = Model(latent_inputs, [decoder_outputs, confidence], name="decoder")
 
+# class ConfidenceModel:
+#     def __init__(self, hidden_sizes, obs_dim):
+#         encoder_inputs = Input(batch_shape=(None, obs_dim))
+
 class VEModel(keras.Model):
     """
     ## Define the VAE as a `Model` with a custom `train_step`
@@ -56,7 +62,13 @@ class VEModel(keras.Model):
         x, y = data
         with tf.GradientTape() as tape:
             z_mean, z_log_var, z = self.encoder(x)
-            reconstruction, _ = self.decoder(z)
+            reconstruction, confidence = self.decoder(z)
+
+            #print(f' reconstruction = {reconstruction} \n confidence =  {confidence}')
+            #assert False
+            # y_with_confidence_mask = tf.math.multiply(y, confidence_mask)
+            # reconstruction_with_mask = tf.math.multiply(reconstruction, confidence_mask)
+
             reconstruction_loss = tf.reduce_mean(
                 keras.losses.binary_crossentropy(y, reconstruction)
             )
@@ -85,8 +97,8 @@ class VE:
 
     def predict(self, x):
         z_mean, z_log_var, z = self.ve_model.encoder(np.array([x]))
-        #print(f'z mean = {z_mean}, z_log_var ={z_log_var}, z={z}')
-        return self.ve_model.decoder(z)
+        y, confidence = self.ve_model.decoder.predict(z)
+        return y, confidence
 
 
 
@@ -94,34 +106,32 @@ f = VE(2,[50,50],2)
 print('before training 0,0')
 for _ in range(5):
     y = f.predict([0,0])
-    print(y)
+    print(f'y = {y[0]}  confidence = {y[1]}')
 
 print('before training 0.5,0.5')
 for _ in range(5):
     y = f.predict([0,0])
-    print(y)
+    print(f'y = {y[0]}  confidence = {y[1]}')
 
 data_1 = np.random.rand(100000,1)
 data_2 = np.random.rand(100000,1)
 data_3 = np.random.rand(100000,1)
+noise = 0.1*np.random.rand(100000,1)
 
 data_x = np.concatenate([data_1, data_2], axis=1)
-data_y = np.concatenate([data_1, data_3], axis=1)
+data_y = np.concatenate([data_1, data_2], axis=1)
 
-def show_predictions(n, obs):
-    print('=========================================')
-    print(f' observation = {obs}')
-    for _ in range(n):
-        y = f.predict(obs)
-        print(f' predicton = {y[0]} | conf = {y[1]}')
-    print('*****************************************')
 
-show_predictions(5, [0,0])
-show_predictions(5, [0.5,0.5])
+f.fit(data_x, data_x, 10)
 
-f.fit(data_x, data_y, 10)
+print('***************************')
 
-print('After training')
+print('after training [0,0]')
+for _ in range(5):
+    y = f.predict([0,0])
+    print(f'y = {y[0]}  confidence = {y[1]}')
 
-show_predictions(5, [0,0])
-show_predictions(5, [0.5,0.5])
+print('after training [0.5, 0.5]')
+for _ in range(5):
+    y = f.predict([0,0])
+    print(f'y = {y[0]}  confidence = {y[1]}')

@@ -39,9 +39,7 @@ class Decoder:
             network_layer = Dense(layer_size, activation='relu')(network_layer)
 
         decoder_outputs = Dense(obs_dim)(network_layer)
-        confidence = Dense(obs_dim, activation='softmax')(network_layer)
-
-        self.model = Model(latent_inputs, [decoder_outputs, confidence], name="decoder")
+        self.model = Model(latent_inputs, decoder_outputs, name="decoder")
 
 class VEModel(keras.Model):
     """
@@ -56,7 +54,7 @@ class VEModel(keras.Model):
         x, y = data
         with tf.GradientTape() as tape:
             z_mean, z_log_var, z = self.encoder(x)
-            reconstruction, _ = self.decoder(z)
+            reconstruction = self.decoder(z)
             reconstruction_loss = tf.reduce_mean(
                 keras.losses.binary_crossentropy(y, reconstruction)
             )
@@ -107,21 +105,25 @@ data_3 = np.random.rand(100000,1)
 
 data_x = np.concatenate([data_1, data_2], axis=1)
 data_y = np.concatenate([data_1, data_3], axis=1)
+print(data_x.shape)
 
-def show_predictions(n, obs):
-    print('=========================================')
-    print(f' observation = {obs}')
-    for _ in range(n):
-        y = f.predict(obs)
-        print(f' predicton = {y[0]} | conf = {y[1]}')
-    print('*****************************************')
-
-show_predictions(5, [0,0])
-show_predictions(5, [0.5,0.5])
 
 f.fit(data_x, data_y, 10)
 
-print('After training')
+print('***************************')
 
-show_predictions(5, [0,0])
-show_predictions(5, [0.5,0.5])
+print('after training [0,0]')
+for _ in range(5):
+    y = f.predict([0,0])
+    print(y)
+
+print('after training [0.5, 0.5]')
+for _ in range(5):
+    y = f.predict([0.5,0.5])
+    print(y)
+# f.build((None,2))
+# print(f.summary())
+#
+#
+# y = f.predict_next([[0,0,0,0]])
+# print(y)
