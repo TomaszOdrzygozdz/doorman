@@ -26,10 +26,15 @@ class Doorman:
         return self.create_observation()
 
     def create_observation(self):
-        return self.create_observation_one_hot()
+        return self.create_observation_xyk()
 
     def create_observation_xy(self):
         return np.array(self.normalized_position() + tuple([key in self.keys_collected for key in range(self.n_keys)]))
+
+    def create_observation_xyk(self):
+        keys_collected = tuple([key in self.keys_collected for key in range(self.n_keys)])
+        return [np.asarray(self.agent_pos[0]).astype('float32')] + [np.asarray(self.agent_pos[1]).astype('float32')]  \
+               + [np.asarray(key).astype('float32') for key in keys_collected]
 
     def create_observation_one_hot(self):
 
