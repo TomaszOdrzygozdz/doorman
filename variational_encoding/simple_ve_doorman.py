@@ -4,6 +4,7 @@ import keras
 from keras.layers import Dense, Input, Layer
 from keras.models import Model
 from keras.optimizers import Adam
+from keras import regularizers
 
 
 class Sampling(Layer):
@@ -39,7 +40,8 @@ class Decoder:
             network_layer = Dense(layer_size, activation='relu')(network_layer)
 
         decoder_outputs = Dense(obs_dim)(network_layer)
-        confidence = Dense(obs_dim, activation='softmax')(network_layer)
+        confidence = Dense(obs_dim, activation='softmax', kernel_regularizer=regularizers.l2(1e-2),
+                           activity_regularizer=regularizers.l2(1e-2))(network_layer)
 
         self.model = Model(latent_inputs, [decoder_outputs, confidence], name="decoder")
 
@@ -61,8 +63,12 @@ class VEModel(keras.Model):
 
             uniformization_loss = -tf.reduce_mean(tf.math.log(tf.math.scalar_mul(1/self.obs_dim, confidence)))
 
-            reconstruction = tf.math.multiply(reconstruction, confidence)
-            y = tf.math.multiply(y, confidence)
+            reconstruction_conf = tf.math.multiply(reconstruction, confidence)
+            y_conf = tf.math.multiply(y, confidence)
+            reconstruction_loss_conf = tf.reduce_mean(
+                keras.losses.mean_squared_error(y_conf, reconstruction_conf)
+            )
+
             reconstruction_loss = tf.reduce_mean(
                 keras.losses.mean_squared_error(y, reconstruction)
             )
@@ -71,7 +77,7 @@ class VEModel(keras.Model):
             kl_loss = 1 + z_log_var - tf.square(z_mean) - tf.exp(z_log_var)
             kl_loss = tf.reduce_mean(kl_loss)
             kl_loss *= -0.5
-            total_loss = reconstruction_loss + kl_loss + 10*uniformization_loss
+            total_loss = reconstruction_loss + reconstruction_loss_conf + kl_loss #+ uniformization_loss
         grads = tape.gradient(total_loss, self.trainable_weights)
         self.optimizer.apply_gradients(zip(grads, self.trainable_weights))
         return {
@@ -108,12 +114,12 @@ for _ in range(5):
     y = f.predict([0,0])
     print(y)
 
-data_1 = np.random.rand(100000,1)
-data_2 = np.random.rand(100000,1)
-data_3 = np.random.rand(100000,1)
+data_1 = np.random.rand(200000,1)
+data_2 = np.random.rand(200000,1)
+data_3 = np.random.rand(200000,1)
 
 data_x = np.concatenate([data_1, data_2], axis=1)
-data_y = np.concatenate([data_1, data_3], axis=1)
+data_y = np.concatenate([data_1, data_2], axis=1)
 
 def show_predictions(n, obs):
     print('=========================================')
@@ -126,9 +132,10 @@ def show_predictions(n, obs):
 show_predictions(5, [0,0])
 show_predictions(5, [0.5,0.5])
 
-f.fit(data_x, data_y, 10)
+f.fit(data_x, data_y, 5)
 
 print('After training')
 
-show_predictions(5, [0,0])
+
 show_predictions(5, [0.5,0.5])
+show_predictions(5, [0.3,0.2])
