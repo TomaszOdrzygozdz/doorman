@@ -2,8 +2,10 @@ from keras.layers import Dense, Input, Layer
 from keras.models import Model
 from keras.optimizers import Adam
 from keras import regularizers
-
 import keras
+
+import numpy as np
+
 import tensorflow as tf
 
 class ConfidenceNetwork:
@@ -48,7 +50,7 @@ class ConfidenceMLPModel(Model):
         return {
             "loss": total_loss,
             "reconstruction_loss": reconstruction_loss,
-            "uniformization_loss_conf" : reconstruction_loss_conf
+            "reconstruction_loss_conf" : reconstruction_loss_conf
         }
 
 class ConfidenceMLP:
@@ -60,6 +62,43 @@ class ConfidenceMLP:
         self.confidence_model.fit(x, y, epochs=epochs)
 
     def predict(self, x):
-        return self.confidence_model.decoder(x)
+        return self.confidence_model.confidence_model(np.array([x]))
 
+
+f = ConfidenceMLP(2,[50,50])
+print('before training 0,0')
+for _ in range(5):
+    y = f.predict([0,0])
+    print(y)
+
+print('before training 0.5,0.5')
+for _ in range(5):
+    y = f.predict([0,0])
+    print(y)
+
+data_1 = np.random.rand(100000,1)
+data_2 = np.random.rand(100000,1)
+data_3 = np.random.rand(100000,1)
+
+data_x = np.concatenate([data_1, data_2], axis=1)
+data_y = np.concatenate([data_1, data_3], axis=1)
+
+def show_predictions(n, obs):
+    print('=========================================')
+    print(f' observation = {obs}')
+    for _ in range(n):
+        y = f.predict(obs)
+        print(f' predicton = {y[0]} | conf = {y[1]}')
+    print('*****************************************')
+
+show_predictions(1, [0,0])
+show_predictions(1, [0.5,0.5])
+
+f.fit(data_x, data_y, 5)
+
+print('After training')
+
+
+show_predictions(1, [0.5,0.5])
+show_predictions(1, [0.3,0.2])
 
