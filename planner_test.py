@@ -18,9 +18,13 @@ goal_y = 7
 start = env.reset()
 planner.load_observation(start)
 
+path = []
+
 while True:
-    print(f'agents pos = {planner.agent_pos}')
+    pos = planner.agent_pos
+    path.append((int(pos[0]), int(pos[1])))
     act = planner.go_to_xy((5,6))
     obs, _, _, _ = env.step(act)
     print(f'env obs = {obs}')
     planner.load_observation(obs)
+    print(f'path = {path}')

@@ -82,5 +82,5 @@ class ConfidenceMLP:
         prediction_round = self.transform_output(prediction)
         if show:
             print(f'input = {x}: prediction = {prediction} round = {prediction_round} | confidence = {conf}')
-        return prediction, conf
+        return prediction_round, conf
 

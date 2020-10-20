@@ -67,7 +67,6 @@ class PlannerSimulator:
         return top
 
 
-
     def go_to_xy(self, pos):
         def sgn(z):
             if z > 0:
@@ -77,8 +76,12 @@ class PlannerSimulator:
             else:
                 return 0
         x, y = pos
+
+
         x_dir = sgn(x - self.agent_pos[0])
         y_dir = sgn(y - self.agent_pos[1])
+
+        print(f'x = {x} y = {y} xdir = {x_dir} y_dir = {y_dir}')
 
         x_move = {-1: 'left', 1:'right'}
         y_move = {1: 'up', -1:'down'}
@@ -91,8 +94,10 @@ class PlannerSimulator:
                 return y_move[y_dir]
         elif x_dir != 0:
             return x_move[x_dir]
-        else:
+        elif y_dir != 0:
             return y_move[y_dir]
+        else:
+            print('goal achieved')
 
 
     def show_map(self, curr_obs):
@@ -169,3 +174,16 @@ class SemiGoalLearner:
 
     def render(self):
         self.env.render()
+
+    def episode_with_planner(self, n_episodes, step_limit):
+
+        done = False
+        reward = 0
+        start_obs = self.env.reset()
+        current_goal, confidence = self.model.predict_round(start_obs)
+        print(f'current_goal = {current_goal} | conf = {confidence}')
+        steps = 0
+
+
+        # while not done and steps < step_limit:
+
