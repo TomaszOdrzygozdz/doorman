@@ -45,7 +45,7 @@ class ConfidenceMLPModel(Model):
                 keras.losses.mean_squared_error(y, reconstruction)
             )
 
-            uniformization_loss *= 0.0001
+            uniformization_loss *= 0.001
             total_loss = reconstruction_loss + reconstruction_loss_conf + uniformization_loss
         grads = tape.gradient(total_loss, self.trainable_weights)
         self.optimizer.apply_gradients(zip(grads, self.trainable_weights))
