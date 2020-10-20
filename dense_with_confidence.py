@@ -46,7 +46,7 @@ class ConfidenceMLPModel(Model):
             )
 
             uniformization_loss *= 0.001
-            total_loss = reconstruction_loss + reconstruction_loss_conf + uniformization_loss
+            total_loss = reconstruction_loss + 10*reconstruction_loss_conf + uniformization_loss
         grads = tape.gradient(total_loss, self.trainable_weights)
         self.optimizer.apply_gradients(zip(grads, self.trainable_weights))
         return {
@@ -58,15 +58,29 @@ class ConfidenceMLPModel(Model):
 
 class ConfidenceMLP:
     def __init__(self, obs_dim, hidden_sizes):
+        self.obs_dim = obs_dim
         self.confidence_model = ConfidenceMLPModel(obs_dim, hidden_sizes)
         self.confidence_model.compile(optimizer=Adam())
 
     def fit(self, x, y, epochs):
         self.confidence_model.fit(x, y, epochs=epochs)
 
+    def transform_output(self, output):
+        new_output = []
+        for i in range(len(output)):
+            new_output.append(round(float(output[i])))
+        return np.array(new_output)
+
     def predict(self, x, show=False):
         prediction, conf = self.confidence_model.confidence_model(np.array([x]))
         if show:
             print(f'input = {x}: prediction = {prediction} | confidence = {conf}')
+        return prediction.numpy()[0], conf.numpy()[0]
+
+    def predict_round(self, x, show=False):
+        prediction, conf = self.predict(x, False)
+        prediction_round = self.transform_output(prediction)
+        if show:
+            print(f'input = {x}: prediction = {prediction} round = {prediction_round} | confidence = {conf}')
         return prediction, conf
 

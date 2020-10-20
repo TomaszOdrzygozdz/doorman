@@ -22,6 +22,8 @@ class Doorman:
         self.keys_collected = []
         self.done = False
         self._place_keys()
+        while len(self.keys) != len(self.keys_pos):
+            self._place_keys()
         self.key_colors =  ['red', 'green', 'blue', 'yellow', 'brown', 'gray']
         return self.create_observation()
 
@@ -89,6 +91,8 @@ class Doorman:
         return (random.randint(0,self.size-1), random.randint(0,self.size-1))
 
     def _place_keys(self):
+        self.keys = {}
+        self.keys_pos = {}
         def try_placing():
             positions = {self.agent_pos}
             for key_num in range(self.n_keys):
